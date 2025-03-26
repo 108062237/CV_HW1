@@ -107,7 +107,7 @@ if __name__ == "__main__":
     class_names = dataset.class_names if hasattr(dataset, 'class_names') else None
 
     for i, (image, label) in enumerate(train_loader):
-        for j in range(min(4, image.size(0))):  # 每個 batch 顯示最多4張
+        for j in range(min(4, image.size(0))):  
             class_name = class_names[label[j]] if class_names else None
             print(f"第 {i+1} 個 batch, 第 {j+1} 張圖 - Label: {label[j].item()}, Class: {class_name}")
             show_image_with_label(image[j], label[j].item(), class_name)

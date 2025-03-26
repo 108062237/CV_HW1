@@ -11,6 +11,10 @@ from torch.utils.data import Dataset, DataLoader
 from model.model import build_model
 from data_loader import get_dataloaders
 
+from sklearn.metrics import accuracy_score, confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 # ---------- Config ----------
 CONFIG_PATH = "configs/config.yaml"
 MODEL_PATHS = [
@@ -66,7 +70,67 @@ def run_ensemble_inference(test_loader):
     df.to_csv(OUTPUT_CSV, index=False)
     print(f"\u2705 預測完成，Ensemble 結果已儲存在 {OUTPUT_CSV}")
 
+
+def evaluate_ensemble(models, val_loader, device):
+    correct = 0
+    total = 0
+
+    for images, labels in tqdm(val_loader, desc="Evaluating Ensemble"):
+        images = images.to(device)
+        labels = labels.to(device)
+
+        with torch.no_grad():
+            logits_sum = None
+            for model in models:
+                outputs = model(images)
+                probs = F.softmax(outputs, dim=1)
+                logits_sum = probs if logits_sum is None else logits_sum + probs
+
+            avg_probs = logits_sum / len(models)
+            preds = torch.argmax(avg_probs, dim=1)
+
+        correct += (preds == labels).sum().item()
+        total += labels.size(0)
+
+    acc = correct / total
+    print(f"\n✅ Ensemble Validation Accuracy: {acc:.4f}")
+    return acc
+
+def plot_confusion_matrix(cm, title="Confusion Matrix" , save_path="ensemble_confusion_matrix.png"):
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(cm, annot=False, cmap="Blues", fmt="d")
+    plt.title(title)
+    plt.xlabel("Predicted")
+    plt.ylabel("True")
+    plt.tight_layout()
+    plt.show()
+
+    plt.savefig(save_path)
+
 # ---------- Main ----------
 if __name__ == "__main__":
-    _, _, test_loader = get_dataloaders(config)
-    run_ensemble_inference(test_loader)
+    _, val_loader, test_loader = get_dataloaders(config)
+    evaluate_ensemble(models, val_loader, config['device'])
+
+    y_true, y_pred = [], []
+    for images, labels in val_loader:
+        images = images.to(config["device"])
+        labels = labels.to(config["device"])
+
+        with torch.no_grad():
+            logits_sum = None
+            for model in models:
+                outputs = model(images)
+                probs = F.softmax(outputs, dim=1)
+                logits_sum = probs if logits_sum is None else logits_sum + probs
+
+            avg_probs = logits_sum / len(models)
+            preds = torch.argmax(avg_probs, dim=1)
+
+        y_true.extend(labels.cpu().numpy())
+        y_pred.extend(preds.cpu().numpy())
+
+    cm = confusion_matrix(y_true, y_pred)
+    plot_confusion_matrix(cm, title="Ensemble Confusion Matrix")
+
+   # run_ensemble_inference(test_loader)
