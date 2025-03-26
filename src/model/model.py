@@ -13,6 +13,23 @@ model_map = {
     "resnext101_32x8d": (models.resnext101_32x8d, models.ResNeXt101_32X8D_Weights.DEFAULT),
 }
 
+class SEModule(nn.Module):
+    def __init__(self, channels, reduction=16):
+        super(SEModule, self).__init__()
+        self.fc = nn.Sequential(
+            nn.AdaptiveAvgPool2d(1),
+            nn.Flatten(),
+            nn.Linear(channels, channels // reduction),
+            nn.ReLU(),
+            nn.Linear(channels // reduction, channels),
+            nn.Sigmoid()
+        )
+
+    def forward(self, x):
+        b, c, _, _ = x.size()
+        scale = self.fc(x).view(b, c, 1, 1)
+        return x * scale
+    
 def build_model(config):
     model_fn, weights = model_map.get(config['model_name'], (None, None))
     if model_fn is None:
@@ -22,11 +39,24 @@ def build_model(config):
     print(f"[Info] Loaded {config['model_name']} with pretrained weights.")
 
     num_ftrs = model.fc.in_features
-    model.fc = nn.Sequential(
-        nn.Dropout(0.5),
-        nn.Linear(num_ftrs, config['num_classes'])
-    )
-
+    if config.get('use_se', False):
+        print("[Info] Applying Squeeze-and-Excitation (SE) module before FC layer.")
+        model.avgpool = nn.Sequential(
+            model.avgpool,
+            SEModule(num_ftrs)
+        )
+        model.fc = nn.Sequential(
+            nn.Linear(num_ftrs, 512),
+            nn.BatchNorm1d(512),
+            nn.ReLU(),
+            nn.Dropout(0.4),
+            nn.Linear(512, config['num_classes'])
+        )
+    else:
+        model.fc = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(num_ftrs, config['num_classes'])
+        )
     return model.to(config['device'])
 
 # testing

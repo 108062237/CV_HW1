@@ -10,6 +10,5 @@ if __name__ == "__main__":
 
     train_loader, val_loader, test_loader = get_dataloaders(config)
     model = build_model(config)
-    print(model)
     train(model, train_loader, val_loader, config)
     evaluate(model, test_loader, config)
