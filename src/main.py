@@ -10,8 +10,6 @@ if __name__ == "__main__":
 
     train_loader, val_loader, test_loader = get_dataloaders(config)
     model = build_model(config)
-    model_parameters = sum(p.numel() for p in model.parameters())
-    print(f"model parameters：{model_parameters:,} ")
 
     train(model, train_loader, val_loader, config)
     evaluate(model, test_loader, config)

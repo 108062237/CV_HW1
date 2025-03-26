@@ -9,8 +9,7 @@ def evaluate(model, dataloader, config):
 
     with torch.no_grad():
         for batch in dataloader:
-            # 判斷 batch 是 (images, labels) 或 (images, paths)
-            if isinstance(batch[1][0], str):  # test set 回傳 (image, path)
+            if isinstance(batch[1][0], str):  
                 is_testset = True
                 images, paths = batch
                 images = images.to(config['device'])
@@ -22,7 +21,7 @@ def evaluate(model, dataloader, config):
                     filename = path.split("/")[-1]
                     results.append((filename, pred.item()))
 
-            else:  # validation set 回傳 (image, label)
+            else:  
                 images, labels = batch
                 images = images.to(config['device'])
                 labels = labels.to(config['device'])

@@ -93,7 +93,7 @@ def evaluate_ensemble(models, val_loader, device):
         total += labels.size(0)
 
     acc = correct / total
-    print(f"\n✅ Ensemble Validation Accuracy: {acc:.4f}")
+    print(f"\n Ensemble Validation Accuracy: {acc:.4f}")
     return acc
 
 def plot_confusion_matrix(cm, title="Confusion Matrix" , save_path="ensemble_confusion_matrix.png"):
@@ -133,4 +133,4 @@ if __name__ == "__main__":
     cm = confusion_matrix(y_true, y_pred)
     plot_confusion_matrix(cm, title="Ensemble Confusion Matrix")
 
-   # run_ensemble_inference(test_loader)
+    run_ensemble_inference(test_loader)

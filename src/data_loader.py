@@ -87,7 +87,7 @@ def get_dataloaders(config):
 
 def show_image_with_label(image_tensor, label, class_name=None):
     import matplotlib.pyplot as plt
-    image = F.to_pil_image(image_tensor.cpu())  # 還原成 PIL image
+    image = F.to_pil_image(image_tensor.cpu())  
     plt.imshow(image)
     title = f"Label: {label}" if class_name is None else f"Label: {label} (Class: {class_name})"
     plt.title(title)
